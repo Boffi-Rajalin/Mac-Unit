@@ -1,0 +1,70 @@
+module mac(clk,rst, a,b, z);
+input clk,rst;
+input [2:0] a,b;
+output [5:0] z;
+wire [5:0] w;
+multiplier U1(.a(a),.b(b),.p(w));
+pipo U2(.d_in(w), .clk(clk),.rst(rst),.d_out(z));
+endmodule
+
+module multiplier(a,b, p);
+input [2:0] a,b;
+output [5:0] p;
+wire [7:0]u;
+wire [1:0]su;
+wire [8:0]i;
+and (p[0],a[0],b[0]);
+and (u[0],a[1],b[0]);
+and (u[1],a[2],b[0]);
+and (u[2],a[0],b[1]);
+and (u[3],a[1],b[1]);
+and (u[4],a[2],b[1]);
+and (u[5],a[0],b[2]);
+and (u[6],a[1],b[2]);
+and (u[7],a[2],b[2]);
+hadd h1(.l(u[0]),.m(u[2]),.ha_sum(p[1]),.ha_car(i[0]));
+hadd h2(.l(i[0]),.m(u[1]),.ha_sum(su[0]),.ha_car(i[1]));
+hadd h3(.l(u[3]),.m(u[5]),.ha_sum(su[1]),.ha_car(i[2]));
+hadd h4(.l(su[0]),.m(su[1]),.ha_sum(p[2]),.ha_car(i[4]));
+hadd h5(.l(i[1]),.m(i[2]),.ha_sum(i[5]),.ha_car(i[6]));
+or (i[7],i[5],i[4]);
+fadd f1(.d(i[7]),.e(u[4]),.cin(u[6]),.fa_sum(p[3]),.fa_car(i[8]));
+fadd f2(.d(i[8]),.e(i[6]),.cin(u[7]),.fa_sum(p[4]),.fa_car(p[5]));
+endmodule
+
+
+module pipo(d_in, clk,rst, d_out);
+input [5:0] d_in;
+input clk,rst;
+output [5:0] d_out;
+reg [5:0] d_out;
+always @(posedge clk or negedge rst)
+begin
+if(!rst)
+begin
+d_out <= 6'b000000;
+end
+else
+begin
+d_out <= d_in;
+end
+end
+endmodule
+
+
+
+module fadd(fa_sum,fa_car,d,e,cin);
+input d,e,cin;
+output fa_sum,fa_car;
+assign fa_sum = (d ^ e ^ cin);
+assign fa_car = ((d&e) | (e&cin) | (d&cin));
+endmodule
+
+
+
+module hadd(ha_sum,ha_car,l,m);
+input l,m;
+output ha_sum,ha_car;
+assign ha_sum = (l^m);
+assign ha_car = (l&m);
+endmodule
